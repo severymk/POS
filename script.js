@@ -1,5 +1,5 @@
 // Google Apps Script Deploy URL ကို အောက်တွင် ထည့်သွင်းပါ
-const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbzN3HA3MPbQw0JenqqDpQY8xAOaSMpc_FxkGonqIdLQOKJLdYdhcw_ZmdlEAFU2ifuW/exec"; 
 
 let currentUser = null;
 let products = [];
