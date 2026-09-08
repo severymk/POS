@@ -3,157 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Premium POS Solution</title>
+  <title>POS System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-light">
 
-  <!-- AUTHENTICATION SCREEN -->
+  <!-- 1. LOGIN SCREEN -->
   <div id="loginScreen" class="d-flex align-items-center justify-content-center vh-100 bg-dark-gradient">
     <div class="card login-card p-4 shadow-lg text-center">
-      <h3 class="mb-4 text-primary font-weight-bold"><i class="fa-solid me-2 fa-cash-register"></i>Smart POS System</h3>
-      <div id="loginError" class="alert alert-danger d-none"></div>
+      <h3 class="mb-4 text-primary font-weight-bold">
+        <i class="fa-solid fa-cash-register me-2"></i>POS Login
+      </h3>
+      <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
       <form id="loginForm">
         <div class="mb-3 text-start">
-          <label class="form-label">Username</label>
-          <input type="text" id="username" class="form-control" placeholder="Enter username" required>
+          <label class="form-label font-weight-bold">Username</label>
+          <input type="text" id="username" class="form-control" placeholder="Enter username" required autocomplete="off">
         </div>
         <div class="mb-3 text-start">
-          <label class="form-label">Password</label>
+          <label class="form-label font-weight-bold">Password</label>
           <input type="password" id="password" class="form-control" placeholder="Enter password" required>
         </div>
-        <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
+        <button type="submit" id="loginBtn" class="btn btn-primary w-100 py-2 fw-bold">
+          <span id="loginBtnText">Sign In</span>
+          <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER -->
+  <!-- 2. MAIN APPLICATION -->
   <div id="appContainer" class="d-none">
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm">
-      <a class="navbar-brand font-weight-bold" href="#"><i class="fa-solid fa-store me-2 text-warning"></i>Enterprise POS</a>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm sticky-top">
+      <a class="navbar-brand font-weight-bold" href="#">
+        <i class="fa-solid fa-store text-warning me-2"></i>Smart POS
+      </a>
       <div class="ms-auto d-flex align-items-center text-white">
-        <span class="me-3" id="userBadge"></span>
-        <button class="btn btn-outline-danger btn-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        <span class="me-3 badge bg-secondary fs-6" id="userBadge">User</span>
+        <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+        </button>
       </div>
     </nav>
 
     <div class="container-fluid py-3">
-      <!-- 1. STAFF VIEW (POS INTERFACE) -->
+      <!-- STAFF / POS INTERFACE -->
       <div id="staffSection" class="role-section d-none">
-        <div class="row">
-          <div class="col-md-7">
-            <div class="card p-3 shadow-sm mb-3">
+        <div class="row g-3">
+          <!-- Product Selection Area -->
+          <div class="col-lg-7">
+            <div class="card p-3 shadow-sm h-100">
               <div class="input-group mb-3">
                 <span class="input-group-text"><i class="fa-solid fa-barcode"></i></span>
-                <input type="text" id="barcodeInput" class="form-control" placeholder="Scan Barcode or Search Item...">
+                <input type="text" id="barcodeInput" class="form-control" placeholder="Scan barcode or type to search products..." autofocus>
+                <button class="btn btn-outline-secondary" type="button" onclick="loadProducts()">
+                  <i class="fa-solid fa-rotate me-1"></i> Refresh
+                </button>
               </div>
-              <div class="row row-cols-3 g-2" id="productGrid" style="max-height: 500px; overflow-y: auto;">
-                <!-- Dynamic Products Load -->
+              <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 overflow-auto" id="productGrid" style="max-height: 600px;">
+                <!-- Product items will load dynamically here -->
               </div>
             </div>
           </div>
 
-          <div class="col-md-5">
+          <!-- Checkout & Cart Area -->
+          <div class="col-lg-5">
             <div class="card p-3 shadow-sm">
-              <h5 class="border-bottom pb-2"><i class="fa-solid fa-cart-shopping me-2"></i>Current Order</h5>
-              <div class="table-responsive" style="max-height: 250px;">
-                <table class="table table-sm align-middle">
-                  <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Action</th></tr></thead>
-                  <tbody id="cartTable"></tbody>
+              <h5 class="border-bottom pb-2 fw-bold text-secondary">
+                <i class="fa-solid fa-cart-shopping me-2"></i>Current Order
+              </h5>
+              <div class="table-responsive overflow-auto" style="max-height: 280px;">
+                <table class="table table-hover table-sm align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Item</th>
+                      <th class="text-center" style="width: 100px;">Qty</th>
+                      <th class="text-end">Price</th>
+                      <th class="text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cartTable">
+                    <tr>
+                      <td colspan="4" class="text-center text-muted py-4">Cart is empty</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
-              <hr>
-              <div class="d-flex justify-content-between"><span>Subtotal:</span><span id="subTotal">0 MMK</span></div>
-              <div class="d-flex justify-content-between align-items-center my-2">
-                <span>Discount:</span>
-                <input type="number" id="discountInput" class="form-control form-control-sm w-25 text-end" value="0" onchange="calculateCart()">
+              
+              <hr class="my-2">
+              <div class="d-flex justify-content-between text-muted fs-6 mb-1">
+                <span>Subtotal:</span>
+                <span id="subTotal" class="fw-bold">0 MMK</span>
               </div>
-              <div class="d-flex justify-content-between h4 text-primary fw-bold"><span>Total:</span><span id="grandTotal">0 MMK</span></div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted">Discount (MMK):</span>
+                <input type="number" id="discountInput" class="form-control form-control-sm text-end" style="width: 120px;" value="0" min="0" oninput="calculateCart()">
+              </div>
+              <div class="d-flex justify-content-between h4 text-primary fw-bold my-2">
+                <span>Total:</span>
+                <span id="grandTotal">0 MMK</span>
+              </div>
 
-              <div class="mb-3 mt-2">
-                <label class="form-label small">Payment Method</label>
-                <select id="payMethod" class="form-select form-select-sm">
+              <div class="mb-3">
+                <label class="form-label small text-muted font-weight-bold">Payment Method</label>
+                <select id="payMethod" class="form-select">
                   <option value="Cash">Cash</option>
                   <option value="KPay">KBZPay</option>
-                  <option value="Card">Card</option>
+                  <option value="Card">Card / Wave</option>
                 </select>
               </div>
 
               <div class="d-flex gap-2">
-                <button class="btn btn-warning flex-grow-1" onclick="holdOrder()"><i class="fa-solid fa-pause"></i> Hold</button>
-                <button class="btn btn-success flex-grow-2" onclick="processCheckout()"><i class="fa-solid fa-print"></i> Pay & Print</button>
+                <button class="btn btn-warning w-50 py-2 fw-bold" onclick="holdOrder()">
+                  <i class="fa-solid fa-pause me-1"></i> Hold
+                </button>
+                <button class="btn btn-success w-50 py-2 fw-bold" id="checkoutBtn" onclick="processCheckout()">
+                  <i class="fa-solid fa-print me-1"></i> Pay & Print
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. ADMIN VIEW -->
-      <div id="adminSection" class="role-section d-none">
-        <div class="card p-4 shadow-sm mb-4">
-          <h4 class="mb-3 text-secondary"><i class="fa-solid fa-boxes-stacked me-2"></i>Inventory Management</h4>
+      <!-- ADMIN INTERFACE -->
+      <div id="adminSection" class="role-section d-none mt-4">
+        <div class="card p-4 shadow-sm">
+          <h4 class="mb-3 text-secondary fw-bold">
+            <i class="fa-solid fa-boxes-stacked me-2"></i>Inventory Management
+          </h4>
           <form id="addProductForm" class="row g-3">
-            <div class="col-md-2"><input type="text" id="pBarcode" class="form-control" placeholder="Barcode" required></div>
-            <div class="col-md-3"><input type="text" id="pName" class="form-control" placeholder="Product Name" required></div>
-            <div class="col-md-2"><input type="text" id="pCategory" class="form-control" placeholder="Category" required></div>
-            <div class="col-md-2"><input type="number" id="pCost" class="form-control" placeholder="Cost Price" required></div>
-            <div class="col-md-2"><input type="number" id="pPrice" class="form-control" placeholder="Sell Price" required></div>
-            <div class="col-md-1"><input type="number" id="pStock" class="form-control" placeholder="Qty" required></div>
-            <div class="col-md-12 text-end"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Add Item</button></div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Barcode</label>
+              <input type="text" id="pBarcode" class="form-control" placeholder="885001" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Product Name</label>
+              <input type="text" id="pName" class="form-control" placeholder="Item Name" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Category</label>
+              <input type="text" id="pCategory" class="form-control" placeholder="Category" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Cost Price</label>
+              <input type="number" id="pCost" class="form-control" placeholder="0" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Selling Price</label>
+              <input type="number" id="pPrice" class="form-control" placeholder="0" required>
+            </div>
+            <div class="col-md-1">
+              <label class="form-label small fw-bold">Stock</label>
+              <input type="number" id="pStock" class="form-control" placeholder="0" required>
+            </div>
+            <div class="col-md-12 text-end">
+              <button type="submit" class="btn btn-primary fw-bold">
+                <i class="fa-solid fa-plus me-1"></i> Add Product
+              </button>
+            </div>
           </form>
         </div>
       </div>
 
-      <!-- 3. OWNER VIEW -->
-      <div id="ownerSection" class="role-section d-none">
+      <!-- OWNER INTERFACE -->
+      <div id="ownerSection" class="role-section d-none mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold text-secondary mb-0"><i class="fa-solid fa-chart-line me-2"></i>Executive Summary</h4>
+          <button class="btn btn-sm btn-outline-primary" onclick="loadStats()">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh Analytics
+          </button>
+        </div>
+        
         <div class="row g-3 mb-4">
           <div class="col-md-4">
             <div class="card text-white bg-primary p-3 shadow-sm">
-              <h6>Total Sales Revenue</h6>
-              <h2 id="statSales">0 MMK</h2>
+              <h6 class="text-white-50">Total Sales Revenue</h6>
+              <h2 id="statSales" class="fw-bold my-1">0 MMK</h2>
             </div>
           </div>
           <div class="col-md-4">
             <div class="card text-white bg-danger p-3 shadow-sm">
-              <h6>Total Operational Expenses</h6>
-              <h2 id="statExp">0 MMK</h2>
+              <h6 class="text-white-50">Total Expenses</h6>
+              <h2 id="statExp" class="fw-bold my-1">0 MMK</h2>
             </div>
           </div>
           <div class="col-md-4">
             <div class="card text-white bg-success p-3 shadow-sm">
-              <h6>Net Operating Profit</h6>
-              <h2 id="statProfit">0 MMK</h2>
+              <h6 class="text-white-50">Net Operating Profit</h6>
+              <h2 id="statProfit" class="fw-bold my-1">0 MMK</h2>
             </div>
           </div>
         </div>
         
         <div class="row g-3">
           <div class="col-md-6">
-            <div class="card p-3 shadow-sm">
-              <h5><i class="fa-solid fa-receipt me-2"></i>Record Operational Expense</h5>
+            <div class="card p-3 shadow-sm h-100">
+              <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-receipt me-2"></i>Record Expense</h5>
               <form id="expForm">
-                <input type="text" id="expCat" class="form-control mb-2" placeholder="Category (e.g., Rent, Utilities)" required>
-                <input type="number" id="expAmt" class="form-control mb-2" placeholder="Amount" required>
-                <textarea id="expDesc" class="form-control mb-2" placeholder="Description"></textarea>
-                <button type="submit" class="btn btn-danger w-100">Save Expense</button>
+                <div class="mb-2">
+                  <input type="text" id="expCat" class="form-control" placeholder="Category (e.g. Rent, Electricity, Salaries)" required>
+                </div>
+                <div class="mb-2">
+                  <input type="number" id="expAmt" class="form-control" placeholder="Amount (MMK)" required>
+                </div>
+                <div class="mb-3">
+                  <textarea id="expDesc" class="form-control" placeholder="Expense description/notes"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger w-100 fw-bold">Record Expense</button>
               </form>
             </div>
           </div>
           <div class="col-md-6">
-            <div class="card p-3 shadow-sm">
-              <h5><i class="fa-solid fa-user-plus me-2"></i>Create System Account</h5>
+            <div class="card p-3 shadow-sm h-100">
+              <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-user-plus me-2"></i>Create System User</h5>
               <form id="userForm">
-                <input type="text" id="uName" class="form-control mb-2" placeholder="Username" required>
-                <input type="password" id="uPass" class="form-control mb-2" placeholder="Password" required>
-                <select id="uRole" class="form-select mb-2">
-                  <option value="Staff">Staff</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Owner">Owner</option>
-                </select>
-                <button type="submit" class="btn btn-dark w-100">Create User</button>
+                <div class="mb-2">
+                  <input type="text" id="uName" class="form-control" placeholder="Username" required>
+                </div>
+                <div class="mb-2">
+                  <input type="password" id="uPass" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="mb-3">
+                  <select id="uRole" class="form-select">
+                    <option value="Staff">Staff / Cashier</option>
+                    <option value="Admin">Admin / Manager</option>
+                    <option value="Owner">Owner / Executive</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-dark w-100 fw-bold">Create User Account</button>
               </form>
             </div>
           </div>
@@ -162,19 +243,25 @@
     </div>
   </div>
 
-  <!-- RECEIPT THERMAL PRINT MODAL -->
+  <!-- THERMAL RECEIPT PRINT CONTAINER -->
   <div id="printArea" class="d-none">
     <div class="receipt-box">
-      <h4 class="text-center">STORE RECEIPT</h4>
-      <hr>
-      <p>Voucher: <span id="rVoucher"></span></p>
-      <p>Date: <span id="rDate"></span></p>
-      <p>Cashier: <span id="rCashier"></span></p>
-      <hr>
-      <div id="rItems"></div>
-      <hr>
-      <p class="d-flex justify-content-between"><span>Total:</span><span id="rTotal"></span></p>
-      <p class="text-center mt-3">Thank You! Come Again.</p>
+      <h3 class="text-center font-weight-bold my-0">POS STORE</h3>
+      <p class="text-center small my-0">Yangon, Myanmar</p>
+      <p class="text-center small my-0">Tel: 09-123456789</p>
+      <div class="border-top border-bottom border-dark my-2 py-1">
+        <div class="d-flex justify-content-between"><span>Voucher:</span><span id="rVoucher"></span></div>
+        <div class="d-flex justify-content-between"><span>Date:</span><span id="rDate"></span></div>
+        <div class="d-flex justify-content-between"><span>Cashier:</span><span id="rCashier"></span></div>
+      </div>
+      <div id="rItems" class="mb-2"></div>
+      <div class="border-top border-dark pt-1">
+        <div class="d-flex justify-content-between"><span>Subtotal:</span><span id="rSubtotal"></span></div>
+        <div class="d-flex justify-content-between"><span>Discount:</span><span id="rDiscount"></span></div>
+        <div class="d-flex justify-content-between fw-bold fs-6"><span>Total:</span><span id="rTotal"></span></div>
+        <div class="d-flex justify-content-between"><span>Payment:</span><span id="rPayMethod"></span></div>
+      </div>
+      <p class="text-center my-3 fw-bold">*** THANK YOU ***</p>
     </div>
   </div>
 
