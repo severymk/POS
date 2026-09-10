@@ -6,11 +6,14 @@
   <title>POS System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- JSBarcode & html2canvas Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-light">
 
-  <!-- 1. LOGIN SCREEN -->
+  <!-- LOGIN SCREEN -->
   <div id="loginScreen" class="d-flex align-items-center justify-content-center vh-100 bg-dark-gradient">
     <div class="card login-card p-4 shadow-lg text-center">
       <h3 class="mb-4 text-primary font-weight-bold">
@@ -34,15 +37,16 @@
     </div>
   </div>
 
-  <!-- 2. MAIN APPLICATION -->
+  <!-- MAIN APPLICATION -->
   <div id="appContainer" class="d-none">
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm sticky-top">
       <a class="navbar-brand font-weight-bold" href="#">
         <i class="fa-solid fa-store text-warning me-2"></i>Smart POS
       </a>
-      <div class="ms-auto d-flex align-items-center text-white">
-        <span class="me-3 badge bg-secondary fs-6" id="userBadge">User</span>
+      <div class="ms-auto d-flex align-items-center text-white gap-2">
+        <span class="badge bg-success me-2" id="syncBadge"><i class="fa-solid fa-arrows-rotate fa-spin me-1"></i> Live Sync</span>
+        <span class="me-2 badge bg-secondary fs-6" id="userBadge">User</span>
         <button class="btn btn-outline-danger btn-sm" onclick="logout()">
           <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
         </button>
@@ -50,45 +54,36 @@
     </nav>
 
     <div class="container-fluid py-3">
-      <!-- STAFF / POS INTERFACE -->
-      <div id="staffSection" class="role-section d-none">
+      <!-- 1. STAFF ONLY / POS INTERFACE (Hidden for Admin & Owner) -->
+      <div id="staffSection" class="role-section d-none mb-3">
         <div class="row g-3">
-          <!-- Product Selection Area -->
           <div class="col-lg-7">
             <div class="card p-3 shadow-sm h-100">
               <div class="input-group mb-3">
                 <span class="input-group-text"><i class="fa-solid fa-barcode"></i></span>
-                <input type="text" id="barcodeInput" class="form-control" placeholder="Scan barcode or type to search products..." autofocus>
-                <button class="btn btn-outline-secondary" type="button" onclick="loadProducts()">
-                  <i class="fa-solid fa-rotate me-1"></i> Refresh
-                </button>
+                <input type="text" id="barcodeInput" class="form-control" placeholder="Scan Barcode Or Search" autofocus autocomplete="off">
               </div>
-              <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 overflow-auto" id="productGrid" style="max-height: 600px;">
-                <!-- Product items will load dynamically here -->
-              </div>
+              <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 overflow-auto" id="productGrid" style="max-height: 550px;"></div>
             </div>
           </div>
 
-          <!-- Checkout & Cart Area -->
           <div class="col-lg-5">
             <div class="card p-3 shadow-sm">
               <h5 class="border-bottom pb-2 fw-bold text-secondary">
                 <i class="fa-solid fa-cart-shopping me-2"></i>Current Order
               </h5>
-              <div class="table-responsive overflow-auto" style="max-height: 280px;">
+              <div class="table-responsive overflow-auto" style="max-height: 220px;">
                 <table class="table table-hover table-sm align-middle">
                   <thead class="table-light">
                     <tr>
                       <th>Item</th>
-                      <th class="text-center" style="width: 100px;">Qty</th>
+                      <th class="text-center" style="width: 90px;">Qty</th>
                       <th class="text-end">Price</th>
                       <th class="text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody id="cartTable">
-                    <tr>
-                      <td colspan="4" class="text-center text-muted py-4">Cart is empty</td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center text-muted py-4">Cart is empty</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -107,21 +102,23 @@
                 <span id="grandTotal">0 MMK</span>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label small text-muted font-weight-bold">Payment Method</label>
-                <select id="payMethod" class="form-select">
+              <div class="mb-2">
+                <label class="form-label small text-muted font-weight-bold mb-1">Payment Method</label>
+                <select id="payMethod" class="form-select form-select-sm">
                   <option value="Cash">Cash</option>
                   <option value="KPay">KBZPay</option>
                   <option value="Card">Card / Wave</option>
                 </select>
               </div>
 
-              <div class="d-flex gap-2">
-                <button class="btn btn-warning w-50 py-2 fw-bold" onclick="holdOrder()">
-                  <i class="fa-solid fa-pause me-1"></i> Hold
-                </button>
-                <button class="btn btn-success w-50 py-2 fw-bold" id="checkoutBtn" onclick="processCheckout()">
-                  <i class="fa-solid fa-print me-1"></i> Pay & Print
+              <div class="mb-3">
+                <label class="form-label small text-muted font-weight-bold mb-1">Voucher Notes / Remark</label>
+                <input type="text" id="voucherNotes" class="form-control form-control-sm" placeholder="Enter remark or note">
+              </div>
+
+              <div>
+                <button class="btn btn-success w-100 py-2 fw-bold" id="checkoutBtn" onclick="processCheckout()">
+                  <i class="fa-solid fa-print me-1"></i> Pay & Print (Enter)
                 </button>
               </div>
             </div>
@@ -129,142 +126,465 @@
         </div>
       </div>
 
-      <!-- ADMIN INTERFACE -->
-      <div id="adminSection" class="role-section d-none mt-4">
-        <div class="card p-4 shadow-sm">
-          <h4 class="mb-3 text-secondary fw-bold">
-            <i class="fa-solid fa-boxes-stacked me-2"></i>Inventory Management
-          </h4>
-          <form id="addProductForm" class="row g-3">
-            <div class="col-md-2">
-              <label class="form-label small fw-bold">Barcode</label>
-              <input type="text" id="pBarcode" class="form-control" placeholder="885001" required>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-bold">Product Name</label>
-              <input type="text" id="pName" class="form-control" placeholder="Item Name" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small fw-bold">Category</label>
-              <input type="text" id="pCategory" class="form-control" placeholder="Category" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small fw-bold">Cost Price</label>
-              <input type="number" id="pCost" class="form-control" placeholder="0" required>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small fw-bold">Selling Price</label>
-              <input type="number" id="pPrice" class="form-control" placeholder="0" required>
-            </div>
-            <div class="col-md-1">
-              <label class="form-label small fw-bold">Stock</label>
-              <input type="number" id="pStock" class="form-control" placeholder="0" required>
-            </div>
-            <div class="col-md-12 text-end">
-              <button type="submit" class="btn btn-primary fw-bold">
-                <i class="fa-solid fa-plus me-1"></i> Add Product
-              </button>
-            </div>
-          </form>
+      <!-- 2. OWNER EXECUTIVE STATS -->
+      <div id="ownerSection" class="role-section d-none mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="fw-bold text-secondary mb-0"><i class="fa-solid fa-chart-line me-2"></i>Executive Summary</h5>
         </div>
-      </div>
-
-      <!-- OWNER INTERFACE -->
-      <div id="ownerSection" class="role-section d-none mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h4 class="fw-bold text-secondary mb-0"><i class="fa-solid fa-chart-line me-2"></i>Executive Summary</h4>
-          <button class="btn btn-sm btn-outline-primary" onclick="loadStats()">
-            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh Analytics
-          </button>
-        </div>
-        
-        <div class="row g-3 mb-4">
+        <div class="row g-3">
           <div class="col-md-4">
             <div class="card text-white bg-primary p-3 shadow-sm">
               <h6 class="text-white-50">Total Sales Revenue</h6>
-              <h2 id="statSales" class="fw-bold my-1">0 MMK</h2>
+              <h3 id="statSales" class="fw-bold my-1">0 MMK</h3>
             </div>
           </div>
           <div class="col-md-4">
             <div class="card text-white bg-danger p-3 shadow-sm">
               <h6 class="text-white-50">Total Expenses</h6>
-              <h2 id="statExp" class="fw-bold my-1">0 MMK</h2>
+              <h3 id="statExp" class="fw-bold my-1">0 MMK</h3>
             </div>
           </div>
           <div class="col-md-4">
             <div class="card text-white bg-success p-3 shadow-sm">
               <h6 class="text-white-50">Net Operating Profit</h6>
-              <h2 id="statProfit" class="fw-bold my-1">0 MMK</h2>
+              <h3 id="statProfit" class="fw-bold my-1">0 MMK</h3>
             </div>
           </div>
         </div>
-        
-        <div class="row g-3">
-          <div class="col-md-6">
-            <div class="card p-3 shadow-sm h-100">
-              <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-receipt me-2"></i>Record Expense</h5>
-              <form id="expForm">
-                <div class="mb-2">
-                  <input type="text" id="expCat" class="form-control" placeholder="Category (e.g. Rent, Electricity, Salaries)" required>
-                </div>
-                <div class="mb-2">
-                  <input type="number" id="expAmt" class="form-control" placeholder="Amount (MMK)" required>
-                </div>
-                <div class="mb-3">
-                  <textarea id="expDesc" class="form-control" placeholder="Expense description/notes"></textarea>
-                </div>
-                <button type="submit" class="btn btn-danger w-100 fw-bold">Record Expense</button>
+      </div>
+
+      <!-- 3. CONSOLIDATED SYSTEM MANAGEMENT SECTION (Admin & Owner) -->
+      <div id="managementSection" class="role-section d-none">
+        <div class="card shadow-sm p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-gears me-2"></i>System Management Control Center</h5>
+          </div>
+          
+          <!-- Structured Main Menu Buttons -->
+          <div class="d-flex flex-wrap gap-2 mb-3" id="adminMenuButtons">
+            <button class="btn btn-outline-primary active" onclick="switchMainTab('inventoryMainGroup', this)"><i class="fa-solid fa-boxes-stacked me-1"></i> Inventory Management</button>
+            <button class="btn btn-outline-primary" onclick="switchMainTab('expenseMainGroup', this)"><i class="fa-solid fa-receipt me-1"></i> Record Expense</button>
+            <button class="btn btn-outline-primary" onclick="switchMainTab('userMainGroup', this)"><i class="fa-solid fa-users-gear me-1"></i> User Management</button>
+            <button class="btn btn-outline-primary" onclick="switchMainTab('vouchersPanel', this); loadVouchers();"><i class="fa-solid fa-file-invoice-dollar me-1"></i> Vouchers List</button>
+            <button class="btn btn-outline-primary" onclick="switchMainTab('salesPanel', this); loadSales();"><i class="fa-solid fa-chart-simple me-1"></i> Sales Data</button>
+          </div>
+
+          <hr class="mt-0">
+
+          <!-- MAIN GROUP PANELS -->
+          
+          <!-- 1. Inventory Management Group -->
+          <div id="inventoryMainGroup" class="mgmt-main-group">
+            <ul class="nav nav-pills mb-3 border-bottom pb-2">
+              <li class="nav-item">
+                <button class="nav-link active btn-sm" onclick="switchSubTab('inventoryPanel', this)">Add New Product</button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link btn-sm" onclick="switchSubTab('stockManagePanel', this)">Stock & Price Management</button>
+              </li>
+            </ul>
+
+            <!-- Sub Panel: Add Product -->
+            <div id="inventoryPanel" class="mgmt-panel">
+              <h6 class="fw-bold text-primary mb-3">Add New Inventory Product</h6>
+              <form id="addProductForm" class="row g-2">
+                <div class="col-md-4"><input type="text" id="pBarcode" class="form-control form-control-sm" placeholder="Barcode" required></div>
+                <div class="col-md-4"><input type="text" id="pName" class="form-control form-control-sm" placeholder="Product Name" required></div>
+                <div class="col-md-4"><input type="text" id="pCategory" class="form-control form-control-sm" placeholder="Category" required></div>
+                <div class="col-md-4"><input type="number" id="pCost" class="form-control form-control-sm" placeholder="Cost Price" required></div>
+                <div class="col-md-4"><input type="number" id="pPrice" class="form-control form-control-sm" placeholder="Selling Price" required></div>
+                <div class="col-md-4"><input type="number" id="pStock" class="form-control form-control-sm" placeholder="Stock Qty" required></div>
+                <div class="col-12 text-end"><button type="submit" class="btn btn-primary btn-sm fw-bold"><i class="fa-solid fa-plus me-1"></i>Add Product</button></div>
               </form>
             </div>
+
+            <!-- Sub Panel: Stock & Price Management -->
+            <div id="stockManagePanel" class="mgmt-panel d-none">
+              <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <h6 class="fw-bold text-primary mb-0">Stock & Price Management</h6>
+                <div class="d-flex align-items-center gap-2">
+                  <button class="btn btn-sm btn-dark fw-bold" onclick="printStockTable()"><i class="fa-solid fa-print me-1"></i> Print Stock List</button>
+                  <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="stockSearchInput" class="form-control" placeholder="Search product..." onkeyup="filterStockTable()">
+                  </div>
+                </div>
+              </div>
+              <div class="table-responsive overflow-auto" style="max-height: 350px;">
+                <table class="table table-sm align-middle table-hover" id="stockPrintableTable">
+                  <thead class="table-light">
+                    <tr><th>ID</th><th>Name</th><th>Barcode</th><th>Price</th><th>Stock</th><th class="no-print">Action</th></tr>
+                  </thead>
+                  <tbody id="stockManageTable"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
-          <div class="col-md-6">
-            <div class="card p-3 shadow-sm h-100">
-              <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-user-plus me-2"></i>Create System User</h5>
-              <form id="userForm">
-                <div class="mb-2">
-                  <input type="text" id="uName" class="form-control" placeholder="Username" required>
-                </div>
-                <div class="mb-2">
-                  <input type="password" id="uPass" class="form-control" placeholder="Password" required>
-                </div>
-                <div class="mb-3">
-                  <select id="uRole" class="form-select">
+
+          <!-- 2. Record Expense Group -->
+          <div id="expenseMainGroup" class="mgmt-main-group d-none">
+            <ul class="nav nav-pills mb-3 border-bottom pb-2">
+              <li class="nav-item">
+                <button class="nav-link active btn-sm" onclick="switchSubTab('expensePanel', this)">Record Expense</button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link btn-sm" onclick="switchSubTab('expensesListPanel', this); loadExpenses();">Expenses List</button>
+              </li>
+            </ul>
+
+            <!-- Sub Panel: Expense Form -->
+            <div id="expensePanel" class="mgmt-panel">
+              <h6 class="fw-bold text-primary mb-3">Record Expense</h6>
+              <form id="expForm" class="row g-2" style="max-width: 600px;">
+                <div class="col-md-6"><input type="text" id="expCat" class="form-control form-control-sm" placeholder="Category (Rent, Salary)" required></div>
+                <div class="col-md-6"><input type="number" id="expAmt" class="form-control form-control-sm" placeholder="Amount (MMK)" required></div>
+                <div class="col-12"><textarea id="expDesc" class="form-control form-control-sm" rows="2" placeholder="Expense description/notes"></textarea></div>
+                <div class="col-12"><button type="submit" class="btn btn-danger btn-sm fw-bold">Record Expense</button></div>
+              </form>
+            </div>
+
+            <!-- Sub Panel: Expenses List -->
+            <div id="expensesListPanel" class="mgmt-panel d-none">
+              <h6 class="fw-bold text-primary mb-2">Expenses List</h6>
+              <div class="table-responsive overflow-auto" style="max-height: 350px;">
+                <table class="table table-sm table-hover align-middle">
+                  <thead class="table-light"><tr><th>Expense ID</th><th>Date</th><th>Category</th><th>Amount</th><th>Description</th><th>Recorded By</th><th>Action</th></tr></thead>
+                  <tbody id="expenseTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. User Management Group -->
+          <div id="userMainGroup" class="mgmt-main-group d-none">
+            <ul class="nav nav-pills mb-3 border-bottom pb-2">
+              <li class="nav-item">
+                <button class="nav-link active btn-sm" onclick="switchSubTab('newUserPanel', this)">System New User</button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link btn-sm" onclick="switchSubTab('existingUsersPanel', this); loadUsersList();">Existing Users Management</button>
+              </li>
+            </ul>
+
+            <!-- Sub Panel: New User -->
+            <div id="newUserPanel" class="mgmt-panel">
+              <h6 class="fw-bold text-primary mb-3">Create System New User</h6>
+              <form id="userForm" class="row g-2" style="max-width: 500px;">
+                <div class="col-md-6"><input type="text" id="uName" class="form-control form-control-sm" placeholder="Username" required></div>
+                <div class="col-md-6"><input type="password" id="uPass" class="form-control form-control-sm" placeholder="Password" required></div>
+                <div class="col-12">
+                  <select id="uRole" class="form-select form-select-sm">
                     <option value="Staff">Staff / Cashier</option>
                     <option value="Admin">Admin / Manager</option>
-                    <option value="Owner">Owner / Executive</option>
                   </select>
                 </div>
-                <button type="submit" class="btn btn-dark w-100 fw-bold">Create User Account</button>
+                <div class="col-12"><button type="submit" class="btn btn-dark btn-sm fw-bold">Create User</button></div>
               </form>
             </div>
+
+            <!-- Sub Panel: Existing Users -->
+            <div id="existingUsersPanel" class="mgmt-panel d-none">
+              <h6 class="fw-bold text-primary mb-2">Existing Users Management</h6>
+              <div class="table-responsive overflow-auto" style="max-height: 300px;">
+                <table class="table table-sm align-middle">
+                  <thead class="table-light"><tr><th>User ID</th><th>Username</th><th>Role</th><th>Action</th></tr></thead>
+                  <tbody id="userListTable"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
+
+          <!-- 4. Vouchers List Standalone Main Panel -->
+          <div id="vouchersPanel" class="mgmt-main-group d-none">
+            <h6 class="fw-bold text-primary mb-2">Vouchers List</h6>
+            <div class="table-responsive overflow-auto" style="max-height: 350px;">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light"><tr><th>Voucher ID</th><th>Date</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Method</th><th>Cashier</th><th>Notes</th><th>Action</th></tr></thead>
+                <tbody id="voucherTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 5. Sales Data Standalone Main Panel -->
+          <div id="salesPanel" class="mgmt-main-group d-none">
+            <h6 class="fw-bold text-primary mb-2">Sales Data</h6>
+            <div class="table-responsive overflow-auto" style="max-height: 350px;">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light"><tr><th>Sale ID</th><th>Voucher ID</th><th>Barcode</th><th>Product Name</th><th>Qty</th><th>Price</th><th>Total</th><th>Action</th></tr></thead>
+                <tbody id="salesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
 
-  <!-- THERMAL RECEIPT PRINT CONTAINER -->
-  <div id="printArea" class="d-none">
-    <div class="receipt-box">
-      <h3 class="text-center font-weight-bold my-0">POS STORE</h3>
-      <p class="text-center small my-0">Yangon, Myanmar</p>
-      <p class="text-center small my-0">Tel: 09-123456789</p>
-      <div class="border-top border-bottom border-dark my-2 py-1">
-        <div class="d-flex justify-content-between"><span>Voucher:</span><span id="rVoucher"></span></div>
-        <div class="d-flex justify-content-between"><span>Date:</span><span id="rDate"></span></div>
-        <div class="d-flex justify-content-between"><span>Cashier:</span><span id="rCashier"></span></div>
+  <!-- HIDDEN THERMAL RECEIPT PRINT TEMPLATE -->
+  <div id="receiptPrintArea" class="receipt-container d-none">
+    <div class="text-center mb-2">
+      <h5 class="fw-bold my-0">SMART POS STORE</h5>
+      <small>Yangon, Myanmar</small><br>
+      <small>Tel: 09-123456789</small>
+    </div>
+    <div class="receipt-divider"></div>
+    <div class="small">
+      <div><strong>Voucher:</strong> <span id="recVoucherId"></span></div>
+      <div><strong>Date:</strong> <span id="recDate"></span></div>
+      <div><strong>Cashier:</strong> <span id="recCashier"></span></div>
+    </div>
+    <div class="receipt-divider"></div>
+    <table class="w-100 small align-middle">
+      <thead>
+        <tr class="border-bottom">
+          <th>Item</th>
+          <th class="text-center">Qty</th>
+          <th class="text-end">Price</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody id="recItems"></tbody>
+    </table>
+    <div class="receipt-divider"></div>
+    <div class="small">
+      <div class="d-flex justify-content-between"><span>Subtotal:</span><span id="recSubtotal"></span></div>
+      <div class="d-flex justify-content-between"><span>Discount:</span><span id="recDiscount"></span></div>
+      <div class="d-flex justify-content-between fw-bold fs-6"><span>Total:</span><span id="recTotal"></span></div>
+      <div class="d-flex justify-content-between"><span>Payment:</span><span id="recMethod"></span></div>
+      <div class="d-flex justify-content-between"><span>Notes:</span><span id="recNotes"></span></div>
+    </div>
+    <div class="receipt-divider"></div>
+    <div class="text-center my-2">
+      <svg id="recBarcodeSvg"></svg>
+    </div>
+    <div class="text-center small mt-2">*** Thank You For Shopping ***</div>
+  </div>
+
+  <!-- ================= CUSTOM DIALOG MODALS ================= -->
+
+  <!-- Alert Modal -->
+  <div class="modal fade" id="customAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-light">
+          <h6 class="modal-title fw-bold" id="alertModalTitle">Notification</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-3" id="alertModalBody"></div>
+        <div class="modal-footer py-1 justify-content-center">
+          <button type="button" class="btn btn-primary btn-sm px-4" data-bs-dismiss="modal">OK</button>
+        </div>
       </div>
-      <div id="rItems" class="mb-2"></div>
-      <div class="border-top border-dark pt-1">
-        <div class="d-flex justify-content-between"><span>Subtotal:</span><span id="rSubtotal"></span></div>
-        <div class="d-flex justify-content-between"><span>Discount:</span><span id="rDiscount"></span></div>
-        <div class="d-flex justify-content-between fw-bold fs-6"><span>Total:</span><span id="rTotal"></span></div>
-        <div class="d-flex justify-content-between"><span>Payment:</span><span id="rPayMethod"></span></div>
-      </div>
-      <p class="text-center my-3 fw-bold">*** THANK YOU ***</p>
     </div>
   </div>
 
+  <!-- Confirm Modal -->
+  <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-light">
+          <h6 class="modal-title fw-bold" id="confirmModalTitle">Confirm Action</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-3" id="confirmModalBody">Are you sure?</div>
+        <div class="modal-footer py-1">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm" id="confirmModalBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin/User Verification Modal (Elevated Z-Index) -->
+  <div class="modal fade" id="customAuthModal" tabindex="-1" aria-hidden="true" style="z-index: 1080;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-warning text-dark">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-shield-halved me-1"></i> Security Check</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="small text-muted mb-2" id="authModalUserLabel">Enter password to approve action:</p>
+          <input type="password" id="authModalPassword" class="form-control form-control-sm" placeholder="Password">
+        </div>
+        <div class="modal-footer py-1">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="authModalSubmitBtn">Verify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Edit Product Modal -->
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-primary text-white">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Stock & Price</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalProdId">
+          <input type="hidden" id="modalProdStock">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Product Name</label>
+            <input type="text" id="modalProdName" class="form-control form-control-sm" readonly>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Price (MMK)</label>
+            <input type="number" id="modalProdPrice" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Adjust Stock (Current: <span id="modalProdCurrentStock">0</span>)</label>
+            <div class="input-group input-group-sm">
+              <select id="modalProdStockAction" class="form-select" style="max-width: 80px;">
+                <option value="add">+</option>
+                <option value="sub">-</option>
+              </select>
+              <input type="number" id="modalProdStockQty" class="form-control" value="0" min="0">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success btn-sm" onclick="submitSaveProductEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-primary text-white">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-user-gear me-1"></i> Edit User Management</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalUserId">
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Username</label>
+            <input type="text" id="modalUserName" class="form-control form-control-sm">
+          </div>
+          <hr>
+          <h6 class="fw-bold text-secondary small"><i class="fa-solid fa-key me-1"></i> Change Password</h6>
+          <div class="mb-2">
+            <label class="form-label small text-muted">Target User Current Password (Optional)</label>
+            <input type="password" id="modalUserOldPass" class="form-control form-control-sm" placeholder="Current Password">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small text-muted">New Password</label>
+            <input type="password" id="modalUserNewPass" class="form-control form-control-sm" placeholder="New Password">
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success btn-sm" onclick="submitSaveUserEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Edit Voucher Modal -->
+  <div class="modal fade" id="editVoucherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-primary text-white">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-file-pen me-1"></i> Edit Voucher</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalVoucherId">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Subtotal</label>
+            <input type="number" id="modalVoucherSub" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Discount</label>
+            <input type="number" id="modalVoucherDisc" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Total</label>
+            <input type="number" id="modalVoucherTotal" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Notes</label>
+            <input type="text" id="modalVoucherNotes" class="form-control form-control-sm">
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success btn-sm" onclick="submitSaveVoucherEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Edit Sale Modal -->
+  <div class="modal fade" id="editSaleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-primary text-white">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Sale Record</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalSaleId">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Quantity</label>
+            <input type="number" id="modalSaleQty" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Price</label>
+            <input type="number" id="modalSalePrice" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Total</label>
+            <input type="number" id="modalSaleTotal" class="form-control form-control-sm">
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success btn-sm" onclick="submitSaveSaleEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Edit Expense Modal -->
+  <div class="modal fade" id="editExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 bg-primary text-white">
+          <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Expense</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalExpenseId">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Category</label>
+            <input type="text" id="modalExpenseCat" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Amount</label>
+            <input type="number" id="modalExpenseAmt" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Description</label>
+            <textarea id="modalExpenseDesc" class="form-control form-control-sm" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success btn-sm" onclick="submitSaveExpenseEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
